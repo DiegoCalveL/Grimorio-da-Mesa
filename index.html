@@ -1,0 +1,989 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Grimório da Mesa</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%89%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#E7DFC9;
+    --surface:#F6F1E2;
+    --surface-2:#FBF8EF;
+    --ink:#2B241C;
+    --ink-soft:#6B6152;
+    --accent:#8B1E2B;
+    --accent-soft:#C86A46;
+    --accent-ink:#FBF1EC;
+    --gold:#9C7A2E;
+    --good:#3E6E52;
+    --line:rgba(43,36,28,.18);
+    --line-strong:rgba(43,36,28,.32);
+    --shadow:0 10px 30px -12px rgba(43,36,28,.28);
+    --radius:7px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#17130F;
+      --surface:#221C15;
+      --surface-2:#2B241B;
+      --ink:#EDE3CB;
+      --ink-soft:#B2A388;
+      --accent:#E2664A;
+      --accent-soft:#F0916E;
+      --accent-ink:#241108;
+      --gold:#C9A24E;
+      --good:#6FAE8B;
+      --line:rgba(237,227,203,.16);
+      --line-strong:rgba(237,227,203,.30);
+      --shadow:0 10px 34px -12px rgba(0,0,0,.55);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#17130F;
+    --surface:#221C15;
+    --surface-2:#2B241B;
+    --ink:#EDE3CB;
+    --ink-soft:#B2A388;
+    --accent:#E2664A;
+    --accent-soft:#F0916E;
+    --accent-ink:#241108;
+    --gold:#C9A24E;
+    --good:#6FAE8B;
+    --line:rgba(237,227,203,.16);
+    --line-strong:rgba(237,227,203,.30);
+    --shadow:0 10px 34px -12px rgba(0,0,0,.55);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Manrope",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+  }
+  h1,h2,h3,.display{
+    font-family:"Cinzel","Manrope",serif;
+    letter-spacing:.01em;
+    text-wrap:balance;
+    margin:0;
+  }
+  .prose, .prose p{
+    font-family:"Source Serif 4",Georgia,serif;
+  }
+  a{color:inherit;}
+  button{font-family:inherit;}
+  input,textarea{font-family:"Manrope",sans-serif;}
+  .num{font-variant-numeric:tabular-nums;}
+
+  #app{max-width:980px;margin:0 auto;padding:28px 20px 80px;}
+  @media (min-width:720px){ #app{padding:44px 32px 100px;} }
+
+  .top{
+    display:flex;align-items:baseline;justify-content:space-between;gap:16px;
+    margin-bottom:28px;flex-wrap:wrap;
+    padding-bottom:18px;
+    border-bottom:2px solid var(--gold);
+  }
+  .top .brand{display:flex;flex-direction:column;gap:4px;}
+  .top .brand .campaign-name{
+    font-family:"Cinzel","Manrope",serif;font-size:.92rem;letter-spacing:.06em;color:var(--gold);font-weight:600;
+  }
+  .top .brand .eyebrow{
+    font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:700;
+  }
+  .top h1{font-size:clamp(1.5rem,3.2vw,2.1rem);font-weight:700;color:var(--ink);}
+  .top .sub{color:var(--ink-soft);font-size:.92rem;max-width:46ch;}
+
+  .btn{
+    appearance:none;border:1.5px solid var(--line-strong);background:var(--surface);color:var(--ink);
+    font-weight:600;font-size:.88rem;padding:9px 16px;border-radius:var(--radius);cursor:pointer;
+    transition:background .15s ease, border-color .15s ease, transform .1s ease;
+    white-space:nowrap;
+  }
+  .btn:hover{border-color:var(--accent);}
+  .btn:active{transform:translateY(1px);}
+  .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .btn-primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
+  .btn-primary:hover{background:var(--accent-soft);border-color:var(--accent-soft);}
+  .btn-ghost{background:transparent;border-color:transparent;color:var(--ink-soft);padding:9px 10px;}
+  .btn-ghost:hover{color:var(--accent);border-color:transparent;background:transparent;}
+  .btn-danger{color:var(--accent);}
+  .btn-sm{padding:6px 11px;font-size:.8rem;}
+
+  /* ---------- Auth ---------- */
+  .auth-wrap{min-height:70vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .auth-card{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:32px 28px;max-width:380px;width:100%;
+  }
+  .auth-card .campaign-name{
+    display:block;font-family:"Cinzel","Manrope",serif;font-size:.85rem;letter-spacing:.06em;
+    color:var(--gold);font-weight:600;margin-bottom:10px;
+  }
+  .auth-card h1{font-size:1.4rem;margin-bottom:18px;}
+  .auth-card .field{margin-bottom:14px;}
+  .auth-card .row-actions{display:flex;flex-direction:column;gap:10px;margin-top:6px;}
+  .auth-switch{background:none;border:none;color:var(--accent);text-decoration:underline;cursor:pointer;font-size:.85rem;padding:4px 0 0;text-align:left;}
+  .auth-error{color:var(--accent);font-size:.85rem;margin:-4px 0 10px;}
+  .auth-note{color:var(--good);font-size:.85rem;margin:-4px 0 10px;}
+
+  /* ---------- Roster ---------- */
+  .roster-grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;
+  }
+  .char-card{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px 18px 16px;cursor:pointer;text-align:left;width:100%;
+    box-shadow:var(--shadow);
+    transition:transform .15s ease, border-color .15s ease;
+    display:flex;flex-direction:column;gap:10px;position:relative;
+  }
+  .char-card:hover{transform:translateY(-3px);border-color:var(--gold);}
+  .char-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .char-card .player{
+    font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);font-weight:700;
+  }
+  .char-card h3{font-size:1.28rem;color:var(--ink);}
+  .char-card .empty-name{color:var(--ink-soft);font-style:italic;font-family:"Source Serif 4",serif;font-weight:400;}
+  .char-card .meta{color:var(--ink-soft);font-size:.85rem;font-family:"Source Serif 4",serif;min-height:1.2em;}
+  .card-stats{display:flex;gap:8px;margin-top:2px;flex-wrap:wrap;}
+  .pill{
+    display:inline-flex;align-items:center;gap:5px;font-size:.74rem;font-weight:700;
+    padding:3px 9px;border-radius:99px;border:1px solid var(--line-strong);color:var(--ink-soft);
+  }
+  .pill.pv{color:var(--good);border-color:currentColor;}
+  .pill.pm{color:var(--accent);border-color:currentColor;}
+  .claim-mark{position:absolute;top:14px;right:14px;font-size:.7rem;color:var(--gold);}
+  .card-delete{
+    position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;
+    border:1px solid var(--line-strong);background:var(--surface-2);color:var(--ink-soft);
+    font-size:1rem;line-height:1;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;padding:0;
+  }
+  .card-delete:hover{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
+  .char-card.add-card{
+    align-items:center;justify-content:center;color:var(--ink-soft);font-weight:700;
+    border-style:dashed;box-shadow:none;background:transparent;text-align:center;min-height:120px;
+  }
+  .char-card.add-card:hover{color:var(--accent);border-color:var(--accent);}
+
+  /* ---------- Sheet ---------- */
+  .sheet-head{margin-bottom:22px;}
+  .backlink{
+    display:inline-flex;align-items:center;gap:6px;color:var(--ink-soft);font-size:.85rem;font-weight:600;
+    background:none;border:none;cursor:pointer;padding:0 0 14px;
+  }
+  .backlink:hover{color:var(--accent);}
+  .sheet-title-row{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;}
+  .sheet-title-row .player{
+    font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:4px;
+  }
+  .sheet-title-row h1{font-size:clamp(1.7rem,4vw,2.5rem);}
+  .sheet-actions{display:flex;gap:8px;flex-shrink:0;}
+
+  .panel{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:20px 22px;margin-bottom:16px;box-shadow:var(--shadow);
+  }
+  .panel h2{
+    font-size:1rem;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;
+    padding-bottom:10px;margin-bottom:16px;border-bottom:1px solid var(--line);
+  }
+  .panel .empty-note{color:var(--ink-soft);font-style:italic;font-family:"Source Serif 4",serif;font-size:.92rem;}
+
+  .field-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px 20px;}
+  .field label{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);font-weight:700;margin-bottom:4px;}
+  .field .value{font-size:.98rem;min-height:1.3em;}
+  .field .value.empty{color:var(--ink-soft);font-style:italic;}
+  .field.wide{grid-column:1 / -1;}
+  .field input[type=text], .field input[type=number], .field input[type=email], .field input[type=password], .field textarea, .field select{
+    width:100%;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:5px;
+    color:var(--ink);padding:8px 10px;font-size:.94rem;
+  }
+  .field textarea{resize:vertical;min-height:70px;line-height:1.55;}
+  .field input:focus, .field textarea:focus{outline:2px solid var(--accent);outline-offset:1px;}
+
+  .table-scroll{overflow-x:auto;}
+  .attr-table{width:100%;min-width:560px;border-collapse:collapse;}
+  .attr-table .attr-bonus{color:var(--good);font-weight:800;}
+  .attr-table th{
+    text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);
+    padding:0 8px 8px;font-weight:700;
+  }
+  .attr-table th.num-col, .attr-table td.num-col{text-align:center;}
+  .attr-table td{padding:6px 8px;border-top:1px solid var(--line);}
+  .attr-table tr.total-row td{border-top:2px solid var(--gold);font-weight:800;padding-top:10px;}
+  .attr-table .attr-name{font-weight:700;}
+  .attr-table .hint{display:block;font-size:.65rem;color:var(--ink-soft);font-weight:500;}
+  .attr-table input[type=number]{
+    width:56px;text-align:center;background:var(--surface-2);border:1px solid var(--line-strong);
+    border-radius:5px;color:var(--ink);padding:5px 4px;
+  }
+  .attr-total{font-weight:800;color:var(--accent);font-size:1.02rem;}
+
+  .stat-row{display:flex;gap:14px;flex-wrap:wrap;}
+  .stat-box{
+    flex:1;min-width:150px;background:var(--surface-2);border:1px solid var(--line);border-radius:6px;
+    padding:14px 16px;
+  }
+  .stat-box .lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);font-weight:700;}
+  .stat-box .big{font-size:1.9rem;font-weight:800;margin-top:2px;}
+  .stat-box.pv .big{color:var(--good);}
+  .stat-box.pm .big{color:var(--accent);}
+  .stat-box .suggestion{font-size:.74rem;color:var(--ink-soft);margin-top:4px;}
+
+  ul.trait-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;}
+  ul.trait-list li{
+    padding-left:16px;position:relative;font-family:"Source Serif 4",serif;font-size:.96rem;
+  }
+  ul.trait-list li::before{content:"◆";position:absolute;left:0;top:.15em;color:var(--gold);font-size:.6rem;}
+
+  .card-list{display:flex;flex-direction:column;gap:12px;}
+  .item-card{
+    background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:14px 16px;
+  }
+  .item-card h4{font-family:"Cinzel","Manrope",serif;font-size:1rem;color:var(--gold);}
+  .item-card h4 .qty{font-family:"Manrope",sans-serif;font-size:.75rem;color:var(--ink-soft);font-weight:700;}
+  .item-card p{margin:6px 0 0;font-family:"Source Serif 4",serif;font-size:.94rem;color:var(--ink);}
+  .item-card .tags{display:flex;gap:14px;margin-top:8px;flex-wrap:wrap;}
+  .item-card .tags span{font-size:.78rem;color:var(--ink-soft);}
+  .item-card .tags b{color:var(--ink);font-weight:700;}
+  .item-edit-row{display:flex;justify-content:flex-end;margin-top:8px;}
+
+  .add-row{margin-top:14px;}
+
+  .history-col{max-width:66ch;margin:0 auto;}
+  .history-col p{font-size:1.02rem;line-height:1.75;color:var(--ink);}
+  .history-col p:first-of-type::first-letter{
+    font-family:"Cinzel",serif;font-size:2.6em;float:left;line-height:.85;padding:.06em .08em 0 0;color:var(--accent);
+  }
+  .history-col textarea{width:100%;min-height:320px;line-height:1.7;font-family:"Source Serif 4",serif;font-size:1rem;}
+
+  .banner{
+    display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--gold);
+    border-radius:6px;padding:10px 14px;margin-bottom:18px;font-size:.86rem;color:var(--ink-soft);
+  }
+  .banner.warn{border-color:var(--accent);color:var(--accent);}
+
+  .claim-box{
+    background:var(--surface-2);border:1px dashed var(--line-strong);border-radius:6px;padding:16px 18px;
+    display:flex;flex-direction:column;gap:10px;max-width:420px;
+  }
+  .claim-box p{margin:0;font-size:.88rem;color:var(--ink-soft);}
+  .claim-box .row{display:flex;gap:8px;}
+  .claim-box input{flex:1;background:var(--surface);border:1px solid var(--line-strong);border-radius:5px;padding:8px 10px;color:var(--ink);}
+  .claim-box input:focus{outline:2px solid var(--accent);}
+
+  footer{
+    margin-top:48px;padding-top:18px;border-top:1px solid var(--line);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;
+    font-size:.78rem;color:var(--ink-soft);
+  }
+  footer button{background:none;border:none;color:var(--ink-soft);text-decoration:underline;cursor:pointer;font-size:inherit;padding:0;}
+  footer button:hover{color:var(--accent);}
+
+  @media (prefers-reduced-motion: reduce){
+    .char-card{transition:none;}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function(){
+  "use strict";
+
+  // ===================================================================
+  // Cole aqui a URL e a chave "anon public" do seu projeto Supabase
+  // (Project Settings -> API). A anon key é segura de ficar exposta
+  // aqui: quem protege os dados de verdade são as regras (RLS) do banco.
+  // ===================================================================
+  var SUPABASE_URL = "https://ttjgkcntrnyckkhoczfw.supabase.co";
+  var SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0amdrY250cm55Y2traG9jemZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5MjAwOTcsImV4cCI6MjEwMzQ5NjA5N30.mlzuRMmsM33K1qaQ72bvnbF3s5iI6uOaVpDFNo1Wbqo";
+
+  if (SUPABASE_URL.indexOf("COLOQUE_AQUI") === 0 || SUPABASE_ANON_KEY.indexOf("COLOQUE_AQUI") === 0){
+    document.getElementById("app").innerHTML =
+      '<div class="auth-wrap"><div class="auth-card">' +
+      '<span class="campaign-name">Fragmentos de Vrazymel</span>' +
+      '<h1>Configuração pendente</h1>' +
+      '<p style="font-family:\'Source Serif 4\',serif;font-size:.94rem;color:var(--ink-soft);">' +
+      'Este site ainda não tem a URL e a chave do Supabase preenchidas. Abra o arquivo <code>index.html</code>, ' +
+      'procure as duas linhas perto do topo do <code>&lt;script&gt;</code> com <code>SUPABASE_URL</code> e ' +
+      '<code>SUPABASE_ANON_KEY</code>, e cole os valores do seu projeto (Project Settings → API).</p>' +
+      '</div></div>';
+    throw new Error("Supabase não configurado — preencha SUPABASE_URL e SUPABASE_ANON_KEY.");
+  }
+
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  var ATTRS = [
+    {key:"forca", label:"Força"},
+    {key:"destreza", label:"Destreza"},
+    {key:"agilidade", label:"Agilidade"},
+    {key:"constituicao", label:"Constituição", hint:"sugestão regional: +2 (raça)"},
+    {key:"inteligencia", label:"Inteligência"},
+    {key:"carisma", label:"Carisma", hint:"sugestão regional: −1 (raça)"}
+  ];
+
+  var CHARACTERS = [];
+  var SESSION = null; // {email}
+  var VIEW = {screen:"roster", id:null, editing:false};
+  var draft = null;
+  var banner = null; // {type:'info'|'error', text}
+  var authMode = "login"; // "login" | "signup"
+  var authError = "";
+  var authNote = "";
+
+  function esc(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function attrTotal(a){ a = a || {}; return (Number(a.base)||0)+(Number(a.mod)||0)+(Number(a.item)||0)+(Number(a.extra)||0); }
+  function findChar(id){ for (var i=0;i<CHARACTERS.length;i++){ if (CHARACTERS[i].id===id) return CHARACTERS[i]; } return null; }
+  function findIndex(id){ for (var i=0;i<CHARACTERS.length;i++){ if (CHARACTERS[i].id===id) return i; } return -1; }
+
+  function slugify(s){
+    var out = String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-+|-+$)/g,"");
+    return out || "personagem";
+  }
+
+  function blankAttrs(){
+    return {
+      forca: {base:0,mod:0,item:0,extra:0,bonus:""},
+      destreza: {base:0,mod:0,item:0,extra:0,bonus:""},
+      agilidade: {base:0,mod:0,item:0,extra:0,bonus:""},
+      constituicao: {base:0,mod:0,item:0,extra:0,bonus:""},
+      inteligencia: {base:0,mod:0,item:0,extra:0,bonus:""},
+      carisma: {base:0,mod:0,item:0,extra:0,bonus:""}
+    };
+  }
+
+  function blankCharacterData(){
+    return {
+      nome: "", nivel: 1,
+      idade: "", raca: "", subRaca: "", origem: "", classe: "", subClasse: "",
+      multiclasse: "", xp: 0, idiomas: "", divindades: "", notaExtra: "", altura: "", peso: "",
+      atributos: blankAttrs(), tracosRaciais: [], pericias: [], talentos: [], habilidadesClasse: [],
+      magias: [], itens: [], anotacoes: [], historia: ""
+    };
+  }
+
+  function rowToChar(row){
+    var c = Object.assign({}, row.data || {});
+    c.id = row.id;
+    c.playerName = row.player_name;
+    c.ownerEmail = row.owner_email;
+    return c;
+  }
+
+  function isOwner(c){
+    return !!(SESSION && c.ownerEmail && SESSION.email && c.ownerEmail.toLowerCase() === SESSION.email.toLowerCase());
+  }
+  function canClaim(c){
+    return !!(SESSION && !c.ownerEmail);
+  }
+
+  function setBanner(b){ banner = b; }
+
+  // ---------- data ----------
+
+  function loadCharacters(){
+    return sb.from("characters").select("*").order("id").then(function(res){
+      if (res.error){
+        setBanner({type:"error", text:"Não foi possível carregar as fichas: " + res.error.message});
+        CHARACTERS = [];
+        return;
+      }
+      CHARACTERS = (res.data||[]).map(rowToChar);
+    });
+  }
+  function refreshAndRender(){ loadCharacters().then(render); }
+
+  // ---------- auth ----------
+
+  function doAuthSubmit(){
+    var emailEl = document.getElementById("auth-email");
+    var passEl = document.getElementById("auth-password");
+    var email = (emailEl.value||"").trim();
+    var pass = passEl.value||"";
+    if (!email || !pass){ authError = "Preencha e-mail e senha."; render(); return; }
+    authError = ""; authNote = "";
+    if (authMode === "signup"){
+      sb.auth.signUp({email:email, password:pass}).then(function(res){
+        if (res.error){ authError = res.error.message; render(); return; }
+        authNote = "Conta criada! Se a confirmação por e-mail estiver ativa no projeto, verifique sua caixa de entrada antes de entrar.";
+        authMode = "login";
+        render();
+      });
+    } else {
+      sb.auth.signInWithPassword({email:email, password:pass}).then(function(res){
+        if (res.error){ authError = res.error.message; render(); }
+        // sucesso: onAuthStateChange cuida do resto
+      });
+    }
+  }
+  function doLogout(){
+    sb.auth.signOut();
+  }
+
+  function renderAuthScreen(){
+    var title = authMode === "signup" ? "Criar conta" : "Entrar";
+    var switchText = authMode === "signup" ? "Já tem conta? Entrar" : "Ainda não tem conta? Criar conta";
+    return '<div class="auth-wrap"><div class="auth-card">' +
+      '<span class="campaign-name">Fragmentos de Vrazymel</span>' +
+      '<h1>' + esc(title) + '</h1>' +
+      '<div class="field"><label>E-mail</label><input type="email" id="auth-email" autocomplete="email"></div>' +
+      '<div class="field"><label>Senha</label><input type="password" id="auth-password" autocomplete="' + (authMode==="signup"?"new-password":"current-password") + '"></div>' +
+      (authError ? '<p class="auth-error">' + esc(authError) + '</p>' : '') +
+      (authNote ? '<p class="auth-note">' + esc(authNote) + '</p>' : '') +
+      '<div class="row-actions">' +
+        '<button type="button" class="btn btn-primary" data-auth-submit>' + esc(title) + '</button>' +
+        '<button type="button" class="auth-switch" data-auth-switch>' + esc(switchText) + '</button>' +
+      '</div>' +
+      '</div></div>';
+  }
+
+  function bindAuthHandlers(){
+    var app = document.getElementById("app");
+    var passEl = document.getElementById("auth-password");
+    var submitBtn = app.querySelector("[data-auth-submit]");
+    var switchBtn = app.querySelector("[data-auth-switch]");
+    if (submitBtn) submitBtn.addEventListener("click", doAuthSubmit);
+    if (passEl) passEl.addEventListener("keydown", function(e){ if (e.key === "Enter"){ doAuthSubmit(); } });
+    if (switchBtn) switchBtn.addEventListener("click", function(){
+      authMode = authMode === "signup" ? "login" : "signup";
+      authError = ""; authNote = "";
+      render();
+    });
+  }
+
+  // ---------- navigation ----------
+
+  function goRoster(){ VIEW = {screen:"roster", id:null, editing:false}; draft=null; render(); window.scrollTo(0,0); }
+  function goSheet(id){ VIEW = {screen:"sheet", id:id, editing:false}; draft=null; render(); window.scrollTo(0,0); }
+
+  function showAddForm(){ VIEW._showAdd = true; render(); var inp = document.getElementById("new-char-name"); if (inp) inp.focus(); }
+  function cancelAdd(){ VIEW._showAdd = false; render(); }
+
+  function createCharacter(){
+    var inputEl = document.getElementById("new-char-name");
+    var playerName = (inputEl.value||"").trim();
+    if (!playerName){ inputEl.focus(); return; }
+    var id = slugify(playerName);
+    var ids = CHARACTERS.map(function(c){ return c.id; });
+    var uniqueId = id, n = 2;
+    while (ids.indexOf(uniqueId) !== -1){ uniqueId = id + "-" + n; n++; }
+    VIEW._showAdd = false;
+    sb.from("characters").insert({id: uniqueId, player_name: playerName, owner_email: SESSION.email, data: blankCharacterData()}).then(function(res){
+      if (res.error){ setBanner({type:"error", text:"Não foi possível criar a ficha: " + res.error.message}); render(); return; }
+      VIEW = {screen:"sheet", id: uniqueId, editing:false};
+      refreshAndRender();
+    });
+  }
+
+  function deleteCharacter(id){
+    var c = findChar(id);
+    if (!c) return;
+    var label = (c.nome && c.nome.trim()) ? c.nome : ("ficha de " + c.playerName);
+    if (!window.confirm('Remover "' + label + '" (jogador ' + c.playerName + ')? Essa ação não pode ser desfeita.')) return;
+    sb.from("characters").delete().eq("id", id).then(function(res){
+      if (res.error){ setBanner({type:"error", text:"Não foi possível remover: " + res.error.message}); render(); return; }
+      VIEW = {screen:"roster", id:null, editing:false};
+      refreshAndRender();
+    });
+  }
+
+  function claimCharacter(id){
+    sb.from("characters").update({owner_email: SESSION.email}).eq("id", id).is("owner_email", null).select().then(function(res){
+      if (res.error || !res.data || !res.data.length){
+        setBanner({type:"error", text:"Não foi possível reivindicar essa ficha — talvez alguém já tenha reivindicado primeiro."});
+        refreshAndRender();
+        return;
+      }
+      refreshAndRender();
+    });
+  }
+
+  function startEdit(id){
+    var c = findChar(id);
+    VIEW.editing = true;
+    draft = JSON.parse(JSON.stringify(c));
+    render();
+  }
+  function cancelEdit(){
+    VIEW.editing = false; draft = null; render();
+  }
+  function saveEdit(){
+    var payload = {};
+    Object.keys(draft).forEach(function(k){
+      if (k !== "id" && k !== "playerName" && k !== "ownerEmail") payload[k] = draft[k];
+    });
+    var savedId = draft.id;
+    var playerName = draft.playerName;
+    sb.from("characters").update({player_name: playerName, data: payload}).eq("id", savedId).then(function(res){
+      if (res.error){ setBanner({type:"error", text:"Não foi possível salvar: " + res.error.message}); render(); return; }
+      VIEW = {screen:"sheet", id:savedId, editing:false};
+      draft = null;
+      refreshAndRender();
+    });
+  }
+
+  // ---------- rendering ----------
+
+  function render(){
+    var app = document.getElementById("app");
+    if (!SESSION){
+      app.innerHTML = renderAuthScreen();
+      bindAuthHandlers();
+      return;
+    }
+    var html = "";
+    if (banner){
+      html += '<div class="banner ' + (banner.type==="error"?"warn":"") + '">' + esc(banner.text) + '</div>';
+    }
+    if (VIEW.screen === "roster"){
+      html += renderRoster();
+    } else {
+      var c = findChar(VIEW.id);
+      html += VIEW.editing ? renderSheetEdit(draft) : renderSheetView(c);
+    }
+    html += renderFooter();
+    app.innerHTML = html;
+    bindHandlers();
+  }
+
+  function renderTop(){
+    return '<div class="top">' +
+      '<div class="brand"><span class="campaign-name">Fragmentos de Vrazymel</span>' +
+      '<span class="eyebrow">D&amp;D · Grimório da Mesa</span>' +
+      '<h1>Grimório da Mesa</h1>' +
+      '<p class="sub">Sete fichas, um só grimório. Qualquer um pode ler a mesa inteira — só o dono de cada ficha pode escrevê-la.</p></div>' +
+      '</div>';
+  }
+
+  function renderRoster(){
+    var out = renderTop() + '<div class="roster-grid">';
+    CHARACTERS.forEach(function(c){
+      var hasName = c.nome && c.nome.trim().length>0;
+      var nameHtml = hasName ? esc(c.nome) : '<span class="empty-name">Ficha em branco</span>';
+      var metaParts = [c.raca, c.classe].filter(Boolean);
+      var meta = metaParts.length ? esc(metaParts.join(" · ")) : (hasName ? "" : "Aguardando criação");
+      var pv = (c.atributos ? attrTotal(c.atributos.constituicao) : 0) * 10;
+      var pm = (c.atributos ? attrTotal(c.atributos.inteligencia) : 0) * 10;
+      var stats = "";
+      if (pv) stats += '<span class="pill pv num">PV ' + pv + '</span>';
+      if (pm) stats += '<span class="pill pm num">PM ' + pm + '</span>';
+      out += '<div class="char-card" data-goto="' + c.id + '" tabindex="0" role="button">' +
+        (isOwner(c) ? '<button class="card-delete" data-delete="' + c.id + '" title="Remover personagem" aria-label="Remover personagem">&times;</button>' : '') +
+        (isOwner(c) ? '<span class="claim-mark" title="Ficha sua">✒</span>' : '') +
+        '<span class="player">' + esc(c.playerName) + '</span>' +
+        '<h3>' + nameHtml + '</h3>' +
+        '<div class="meta">' + meta + '</div>' +
+        '<div class="card-stats">' + stats + '</div>' +
+        '</div>';
+    });
+    out += '<button class="char-card add-card" data-show-add>+ Adicionar personagem</button>';
+    out += '</div>';
+    if (VIEW._showAdd){
+      out += '<div class="claim-box" style="margin-top:16px;">' +
+        '<p>Nome do jogador para a nova ficha:</p>' +
+        '<div class="row"><input type="text" id="new-char-name" placeholder="Nome do jogador">' +
+        '<button class="btn btn-primary" data-create-char>Criar ficha</button>' +
+        '<button class="btn btn-ghost" data-cancel-add>Cancelar</button></div>' +
+        '</div>';
+    }
+    return out;
+  }
+
+  function fieldView(label, value, wide){
+    var hasVal = value && String(value).trim().length>0;
+    return '<div class="field' + (wide?' wide':'') + '"><label>' + esc(label) + '</label>' +
+      '<div class="value' + (hasVal?'':' empty') + '">' + (hasVal ? esc(value) : "—") + '</div></div>';
+  }
+  function fieldEdit(label, path, value, wide, placeholder){
+    return '<div class="field' + (wide?' wide':'') + '"><label>' + esc(label) + '</label>' +
+      '<input type="text" data-bind="' + path + '" value="' + esc(value||"") + '" placeholder="' + esc(placeholder||"") + '"></div>';
+  }
+
+  function attrTableView(c){
+    var rows = "", sum = 0;
+    ATTRS.forEach(function(a){
+      var v = c.atributos && c.atributos[a.key] || {};
+      var t = attrTotal(v);
+      sum += t;
+      var bonus = (v.bonus!=null && String(v.bonus).trim()!=="") ? esc(v.bonus) : "—";
+      rows += '<tr><td class="attr-name">' + a.label + '</td>' +
+        '<td class="num-col num">' + (v.base||0) + '</td>' +
+        '<td class="num-col num">' + (v.mod||0) + '</td>' +
+        '<td class="num-col num">' + (v.item||0) + '</td>' +
+        '<td class="num-col num">' + (v.extra||0) + '</td>' +
+        '<td class="num-col num attr-total">' + t + '</td>' +
+        '<td class="num-col num attr-bonus">' + bonus + '</td></tr>';
+    });
+    return '<div class="table-scroll"><table class="attr-table"><thead><tr><th>Atributo</th><th class="num-col">Base</th><th class="num-col">Raça</th>' +
+      '<th class="num-col">Item</th><th class="num-col">Extra</th><th class="num-col">Total</th><th class="num-col">Bônus</th></tr></thead><tbody>' +
+      rows + '<tr class="total-row"><td colspan="5">Total geral</td><td class="num-col num attr-total">' + sum + '</td><td class="num-col">—</td></tr>' +
+      '</tbody></table></div>';
+  }
+
+  function attrTableEdit(c){
+    var rows = "";
+    ATTRS.forEach(function(a){
+      var v = (c.atributos && c.atributos[a.key]) || {base:0,mod:0,item:0,extra:0,bonus:""};
+      var nameCell = a.label + (a.hint?'<span class="hint">'+a.hint+'</span>':'');
+      rows += '<tr><td class="attr-name">' + nameCell + '</td>' +
+        '<td class="num-col"><input type="number" data-bind="atributos.' + a.key + '.base" data-attr-input value="' + (v.base||0) + '"></td>' +
+        '<td class="num-col"><input type="number" data-bind="atributos.' + a.key + '.mod" data-attr-input value="' + (v.mod||0) + '"></td>' +
+        '<td class="num-col"><input type="number" data-bind="atributos.' + a.key + '.item" data-attr-input value="' + (v.item||0) + '"></td>' +
+        '<td class="num-col"><input type="number" data-bind="atributos.' + a.key + '.extra" data-attr-input value="' + (v.extra||0) + '"></td>' +
+        '<td class="num-col num attr-total" data-total="' + a.key + '">' + attrTotal(v) + '</td>' +
+        '<td class="num-col"><input type="text" data-bind="atributos.' + a.key + '.bonus" value="' + esc(v.bonus||"") + '" style="width:48px;" placeholder="+0"></td></tr>';
+    });
+    var sum = ATTRS.reduce(function(s,a){ return s + attrTotal((c.atributos&&c.atributos[a.key])||{}); }, 0);
+    return '<div class="table-scroll"><table class="attr-table"><thead><tr><th>Atributo</th><th class="num-col">Base</th><th class="num-col">Raça</th>' +
+      '<th class="num-col">Item</th><th class="num-col">Extra</th><th class="num-col">Total</th><th class="num-col">Bônus</th></tr></thead><tbody>' +
+      rows + '<tr class="total-row"><td colspan="5">Total geral</td><td class="num-col num attr-total" data-total="__sum">' + sum + '</td><td class="num-col">—</td></tr>' +
+      '</tbody></table></div>';
+  }
+
+  function listBlock(title, items, emptyText){
+    var body;
+    if (!items || !items.length){
+      body = '<p class="empty-note">' + esc(emptyText) + '</p>';
+    } else {
+      body = '<ul class="trait-list">' + items.map(function(t){ return '<li>' + esc(t) + '</li>'; }).join("") + '</ul>';
+    }
+    return '<div class="panel"><h2>' + esc(title) + '</h2>' + body + '</div>';
+  }
+
+  function spellsView(c){
+    var body;
+    if (!c.magias || !c.magias.length){
+      body = '<p class="empty-note">Nenhuma magia ou feitiço registrado ainda.</p>';
+    } else {
+      body = '<div class="card-list">' + c.magias.map(function(m){
+        var tags = "";
+        if (m.nivel) tags += '<span><b>Nível:</b> ' + esc(m.nivel) + '</span>';
+        if (m.custo) tags += '<span><b>Custo:</b> ' + esc(m.custo) + '</span>';
+        if (m.dano) tags += '<span><b>Dano:</b> ' + esc(m.dano) + '</span>';
+        if (m.efeitos) tags += '<span><b>Efeitos:</b> ' + esc(m.efeitos) + '</span>';
+        return '<div class="item-card"><p>' + esc(m.texto) + '</p>' + (tags?'<div class="tags">'+tags+'</div>':'') + '</div>';
+      }).join("") + '</div>';
+    }
+    return '<div class="panel"><h2>Magias e Feitiços</h2>' + body + '</div>';
+  }
+
+  function spellsEdit(c){
+    var body = '<div class="card-list" data-list="magias">' + (c.magias||[]).map(function(m, i){
+      return '<div class="item-card">' +
+        '<textarea data-bind="magias.'+i+'.texto" placeholder="Nome e descrição da magia">' + esc(m.texto||"") + '</textarea>' +
+        '<div class="field-grid" style="margin-top:8px;">' +
+        '<div class="field"><label>Nível</label><input type="text" data-bind="magias.'+i+'.nivel" value="'+esc(m.nivel||"")+'" placeholder="ex.: Truque, 1, 2..."></div>' +
+        '<div class="field"><label>Custo</label><input type="text" data-bind="magias.'+i+'.custo" value="'+esc(m.custo||"")+'"></div>' +
+        '<div class="field"><label>Dano</label><input type="text" data-bind="magias.'+i+'.dano" value="'+esc(m.dano||"")+'"></div>' +
+        '<div class="field"><label>Efeitos</label><input type="text" data-bind="magias.'+i+'.efeitos" value="'+esc(m.efeitos||"")+'"></div>' +
+        '</div><div class="item-edit-row"><button type="button" class="btn btn-ghost btn-sm btn-danger" data-remove="magias.'+i+'">Remover magia</button></div>' +
+        '</div>';
+    }).join("") + '</div>' +
+    '<div class="add-row"><button type="button" class="btn btn-sm" data-add="magias">+ Adicionar magia</button></div>';
+    return '<div class="panel"><h2>Magias e Feitiços</h2>' + body + '</div>';
+  }
+
+  function itemsView(c){
+    var body;
+    if (!c.itens || !c.itens.length){
+      body = '<p class="empty-note">Nenhum item ou equipamento registrado ainda.</p>';
+    } else {
+      body = '<div class="card-list">' + c.itens.map(function(it){
+        var qty = (Number(it.qtd)||1) > 1 ? ' <span class="qty">×' + (Number(it.qtd)||1) + '</span>' : '';
+        return '<div class="item-card"><h4>' + esc(it.nome) + qty + '</h4>' + (it.descricao ? '<p>' + esc(it.descricao) + '</p>' : '') + '</div>';
+      }).join("") + '</div>';
+    }
+    return '<div class="panel"><h2>Equipamentos, Itens e Armaduras</h2>' + body + '</div>';
+  }
+
+  function itemsEdit(c){
+    var body = '<div class="card-list" data-list="itens">' + (c.itens||[]).map(function(it, i){
+      return '<div class="item-card">' +
+        '<div class="field-grid"><div class="field"><label>Nome do item</label><input type="text" data-bind="itens.'+i+'.nome" value="'+esc(it.nome||"")+'"></div>' +
+        '<div class="field"><label>Quantidade</label><input type="number" min="1" data-bind="itens.'+i+'.qtd" value="'+(Number(it.qtd)||1)+'"></div></div>' +
+        '<div class="field" style="margin-top:8px;"><label>Descrição</label><textarea data-bind="itens.'+i+'.descricao">' + esc(it.descricao||"") + '</textarea></div>' +
+        '<div class="item-edit-row"><button type="button" class="btn btn-ghost btn-sm btn-danger" data-remove="itens.'+i+'">Remover item</button></div>' +
+        '</div>';
+    }).join("") + '</div>' +
+    '<div class="add-row"><button type="button" class="btn btn-sm" data-add="itens">+ Adicionar item</button></div>';
+    return '<div class="panel"><h2>Equipamentos, Itens e Armaduras</h2>' + body + '</div>';
+  }
+
+  function statBoxView(c){
+    var conTotal = c.atributos ? attrTotal(c.atributos.constituicao) : 0;
+    var intTotal = c.atributos ? attrTotal(c.atributos.inteligencia) : 0;
+    return '<div class="panel"><h2>Pontos</h2><div class="stat-row">' +
+      '<div class="stat-box pv"><div class="lbl">Pontos de Vida</div><div class="big num">' + (conTotal*10 || "—") + '</div></div>' +
+      '<div class="stat-box pm"><div class="lbl">Pontos de Magia</div><div class="big num">' + (intTotal*10 || "—") + '</div></div>' +
+      '</div></div>';
+  }
+
+  function statBoxEdit(c){
+    var conTotal = c.atributos ? attrTotal(c.atributos.constituicao) : 0;
+    var intTotal = c.atributos ? attrTotal(c.atributos.inteligencia) : 0;
+    return '<div class="panel"><h2>Pontos</h2><div class="stat-row">' +
+      '<div class="stat-box pv"><div class="lbl">Pontos de Vida</div>' +
+      '<div class="big num" data-total="pv">' + (conTotal*10) + '</div>' +
+      '<div class="suggestion">Constituição × 10 (automático)</div></div>' +
+      '<div class="stat-box pm"><div class="lbl">Pontos de Magia</div>' +
+      '<div class="big num" data-total="pm">' + (intTotal*10) + '</div>' +
+      '<div class="suggestion">Inteligência × 10 (automático)</div></div>' +
+      '</div></div>';
+  }
+
+  function historyView(c){
+    var hasHist = c.historia && c.historia.trim().length>0;
+    var body;
+    if (!hasHist){
+      body = '<p class="empty-note">Ainda não há história registrada para este personagem.</p>';
+    } else {
+      body = '<div class="history-col">' + c.historia.split(/\n+/).filter(function(p){return p.trim();}).map(function(p){
+        return '<p>' + esc(p.trim()) + '</p>';
+      }).join("") + '</div>';
+    }
+    return '<div class="panel"><h2>História</h2>' + body + '</div>';
+  }
+  function historyEdit(c){
+    return '<div class="panel"><h2>História</h2><textarea data-bind="historia" placeholder="Conte a origem do personagem...">' + esc(c.historia||"") + '</textarea></div>';
+  }
+
+  function classBoxView(c){
+    var fields = fieldView("Raça", c.raca) + fieldView("Sub-Raça", c.subRaca) +
+      fieldView("Classe", c.classe) + fieldView("Subclasse", c.subClasse) +
+      fieldView("Multiclasse", c.multiclasse) + fieldView("XP", c.xp) + fieldView("Nível", c.nivel);
+    return '<div class="panel"><h2>Raça &amp; Classe</h2><div class="field-grid">' + fields + '</div></div>';
+  }
+
+  function classBoxEdit(c){
+    var fields = fieldEdit("Raça", "raca", c.raca) + fieldEdit("Sub-Raça", "subRaca", c.subRaca) +
+      fieldEdit("Classe", "classe", c.classe) + fieldEdit("Subclasse", "subClasse", c.subClasse) +
+      fieldEdit("Multiclasse", "multiclasse", c.multiclasse, false, "ex.: Guerreiro 3 / Ladino 2") +
+      '<div class="field"><label>XP</label><input type="number" min="0" max="99" data-bind="xp" value="'+esc(c.xp||0)+'">' +
+      '<div class="suggestion">Ao chegar em 100, sobe 1 nível e o XP volta a 0.</div></div>' +
+      '<div class="field"><label>Nível</label><input type="number" min="1" data-bind="nivel" value="'+esc(c.nivel||1)+'"></div>';
+    return '<div class="panel"><h2>Raça &amp; Classe</h2><div class="field-grid">' + fields + '</div></div>';
+  }
+
+  function sheetHeader(c, editing){
+    var hasName = c.nome && c.nome.trim().length>0;
+    var titleHtml = editing
+      ? '<input type="text" data-bind="nome" value="' + esc(c.nome||"") + '" placeholder="Nome do personagem" style="font-family:Cinzel,serif;font-size:1.8rem;font-weight:700;background:transparent;border:none;border-bottom:2px solid var(--line-strong);color:var(--ink);padding:2px 0;width:100%;max-width:520px;">'
+      : (hasName ? '<h1>'+esc(c.nome)+'</h1>' : '<h1 class="empty-name">Ficha em branco</h1>');
+
+    var actions;
+    if (editing){
+      actions = '<div class="sheet-actions"><button class="btn btn-ghost" data-cancel-edit>Cancelar</button>' +
+        '<button class="btn btn-primary" data-save-edit>Salvar ficha</button></div>';
+    } else if (isOwner(c)){
+      actions = '<div class="sheet-actions"><button class="btn btn-primary" data-start-edit="'+c.id+'">Editar ficha</button></div>';
+    } else if (canClaim(c)){
+      actions = '<div class="sheet-actions"><button class="btn" data-claim="'+c.id+'">Esta ficha é minha</button></div>';
+    } else {
+      actions = "";
+    }
+
+    return '<div class="sheet-head"><button class="backlink" data-goto-roster>&larr; Voltar para a mesa</button>' +
+      '<div class="sheet-title-row"><div><span class="player">Jogador: ' + esc(c.playerName) + '</span>' +
+      titleHtml + '</div>' + actions + '</div></div>';
+  }
+
+  function renderSheetView(c){
+    var identityFields = fieldView("Idade", c.idade) + fieldView("Altura", c.altura) + fieldView("Peso", c.peso) +
+      fieldView("Origem", c.origem) + fieldView("Idiomas Adicionais", c.idiomas, true) +
+      fieldView("Divindades Favorecidas", c.divindades) + (c.notaExtra ? fieldView("Nota", c.notaExtra, true) : "");
+
+    return sheetHeader(c, false) +
+      classBoxView(c) +
+      '<div class="panel"><h2>Informações do Personagem</h2><div class="field-grid">' + identityFields + '</div></div>' +
+      '<div class="panel"><h2>Atributos</h2>' + attrTableView(c) + '</div>' +
+      statBoxView(c) +
+      listBlock("Traços Raciais e Regionais", c.tracosRaciais, "Nenhum traço racial anotado ainda.") +
+      listBlock("Perícias", c.pericias, "Nenhuma perícia anotada ainda.") +
+      listBlock("Talentos", c.talentos, "Nenhum talento anotado ainda.") +
+      listBlock("Habilidades de Classe", c.habilidadesClasse, "Nenhuma habilidade de classe anotada ainda.") +
+      spellsView(c) +
+      itemsView(c) +
+      listBlock("Anotações de Mesa", c.anotacoes, "Nenhuma anotação de mesa ainda.") +
+      historyView(c);
+  }
+
+  function renderSheetEdit(c){
+    var identityFields =
+      fieldEdit("Idade", "idade", c.idade) + fieldEdit("Altura", "altura", c.altura) + fieldEdit("Peso", "peso", c.peso) +
+      fieldEdit("Origem", "origem", c.origem) +
+      fieldEdit("Idiomas Adicionais", "idiomas", c.idiomas, true) +
+      fieldEdit("Divindades Favorecidas", "divindades", c.divindades) +
+      fieldEdit("Nota (pacto, juramento, marca...)", "notaExtra", c.notaExtra, true);
+
+    return sheetHeader(c, true) +
+      classBoxEdit(c) +
+      '<div class="panel"><h2>Informações do Personagem</h2><div class="field-grid">' + identityFields + '</div></div>' +
+      '<div class="panel"><h2>Atributos</h2>' + attrTableEdit(c) + '</div>' +
+      statBoxEdit(c) +
+      '<div class="panel"><h2>Traços Raciais e Regionais</h2><textarea data-bind-lines="tracosRaciais" placeholder="Um traço por linha">' + esc((c.tracosRaciais||[]).join("\n")) + '</textarea></div>' +
+      '<div class="panel"><h2>Perícias</h2><textarea data-bind-lines="pericias" placeholder="Uma perícia por linha">' + esc((c.pericias||[]).join("\n")) + '</textarea></div>' +
+      '<div class="panel"><h2>Talentos</h2><textarea data-bind-lines="talentos" placeholder="Um talento por linha">' + esc((c.talentos||[]).join("\n")) + '</textarea></div>' +
+      '<div class="panel"><h2>Habilidades de Classe</h2><textarea data-bind-lines="habilidadesClasse" placeholder="Uma habilidade por linha">' + esc((c.habilidadesClasse||[]).join("\n")) + '</textarea></div>' +
+      spellsEdit(c) +
+      itemsEdit(c) +
+      '<div class="panel"><h2>Anotações de Mesa</h2><textarea data-bind-lines="anotacoes" placeholder="Uma anotação por linha">' + esc((c.anotacoes||[]).join("\n")) + '</textarea></div>' +
+      historyEdit(c);
+  }
+
+  function renderFooter(){
+    return '<footer><span>Logado como ' + esc(SESSION.email) + '.</span>' +
+      '<button data-logout>Sair</button></footer>';
+  }
+
+  // ---------- event binding ----------
+
+  function setPath(obj, path, value){
+    var parts = path.split(".");
+    var cur = obj;
+    for (var i=0;i<parts.length-1;i++){
+      var p = parts[i];
+      if (cur[p] == null) cur[p] = {};
+      cur = cur[p];
+    }
+    cur[parts[parts.length-1]] = value;
+  }
+
+  function bindHandlers(){
+    var app = document.getElementById("app");
+
+    app.querySelectorAll("[data-goto]").forEach(function(el){
+      el.addEventListener("click", function(){ goSheet(el.getAttribute("data-goto")); });
+      el.addEventListener("keydown", function(e){
+        if (e.key === "Enter" || e.key === " "){ e.preventDefault(); goSheet(el.getAttribute("data-goto")); }
+      });
+    });
+    app.querySelectorAll("[data-delete]").forEach(function(el){
+      el.addEventListener("click", function(e){
+        e.stopPropagation();
+        deleteCharacter(el.getAttribute("data-delete"));
+      });
+    });
+    var showAddBtn = app.querySelector("[data-show-add]");
+    if (showAddBtn) showAddBtn.addEventListener("click", showAddForm);
+    var cancelAddBtn = app.querySelector("[data-cancel-add]");
+    if (cancelAddBtn) cancelAddBtn.addEventListener("click", cancelAdd);
+    var createBtn = app.querySelector("[data-create-char]");
+    if (createBtn) createBtn.addEventListener("click", createCharacter);
+    var newCharInput = app.querySelector("#new-char-name");
+    if (newCharInput) newCharInput.addEventListener("keydown", function(e){
+      if (e.key === "Enter"){ e.preventDefault(); createCharacter(); }
+    });
+    var backBtn = app.querySelector("[data-goto-roster]");
+    if (backBtn) backBtn.addEventListener("click", goRoster);
+
+    var startBtn = app.querySelector("[data-start-edit]");
+    if (startBtn) startBtn.addEventListener("click", function(){ startEdit(startBtn.getAttribute("data-start-edit")); });
+
+    var claimBtn = app.querySelector("[data-claim]");
+    if (claimBtn) claimBtn.addEventListener("click", function(){ claimCharacter(claimBtn.getAttribute("data-claim")); });
+
+    var cancelBtn = app.querySelector("[data-cancel-edit]");
+    if (cancelBtn) cancelBtn.addEventListener("click", cancelEdit);
+    var saveBtn = app.querySelector("[data-save-edit]");
+    if (saveBtn) saveBtn.addEventListener("click", saveEdit);
+
+    var logoutBtn = app.querySelector("[data-logout]");
+    if (logoutBtn) logoutBtn.addEventListener("click", doLogout);
+
+    // bound inputs (draft mode)
+    app.querySelectorAll("[data-bind]").forEach(function(el){
+      var path = el.getAttribute("data-bind");
+      el.addEventListener("input", function(){
+        var val = el.type === "number" ? Number(el.value)||0 : el.value;
+        setPath(draft, path, val);
+        if (el.hasAttribute("data-attr-input")) updateAttrTotals();
+        if (path === "xp" && val >= 100){
+          var gained = Math.floor(val/100);
+          draft.nivel = (Number(draft.nivel)||1) + gained;
+          draft.xp = val % 100;
+          render();
+        }
+      });
+    });
+    app.querySelectorAll("[data-bind-lines]").forEach(function(el){
+      var path = el.getAttribute("data-bind-lines");
+      el.addEventListener("input", function(){
+        setPath(draft, path, el.value.split("\n").map(function(s){return s.trim();}).filter(Boolean));
+      });
+    });
+    app.querySelectorAll("[data-add]").forEach(function(el){
+      el.addEventListener("click", function(){
+        var list = el.getAttribute("data-add");
+        if (!draft[list]) draft[list] = [];
+        if (list === "magias") draft.magias.push({texto:"", nivel:"", custo:"", dano:"", efeitos:""});
+        if (list === "itens") draft.itens.push({nome:"", descricao:"", qtd:1});
+        render();
+      });
+    });
+    app.querySelectorAll("[data-remove]").forEach(function(el){
+      el.addEventListener("click", function(){
+        var path = el.getAttribute("data-remove").split(".");
+        var list = path[0], idx = Number(path[1]);
+        draft[list].splice(idx,1);
+        render();
+      });
+    });
+  }
+
+  function updateAttrTotals(){
+    ATTRS.forEach(function(a){
+      var v = draft.atributos[a.key];
+      var t = attrTotal(v);
+      var cell = document.querySelector('[data-total="'+a.key+'"]');
+      if (cell) cell.textContent = t;
+    });
+    var sum = ATTRS.reduce(function(s,a){ return s + attrTotal(draft.atributos[a.key]); }, 0);
+    var sumCell = document.querySelector('[data-total="__sum"]');
+    if (sumCell) sumCell.textContent = sum;
+    var pvCell = document.querySelector('[data-total="pv"]');
+    if (pvCell) pvCell.textContent = attrTotal(draft.atributos.constituicao) * 10;
+    var pmCell = document.querySelector('[data-total="pm"]');
+    if (pmCell) pmCell.textContent = attrTotal(draft.atributos.inteligencia) * 10;
+  }
+
+  // ---------- boot ----------
+
+  sb.auth.getSession().then(function(res){
+    SESSION = (res.data && res.data.session) ? {email: res.data.session.user.email} : null;
+    if (SESSION){ loadCharacters().then(render); } else { render(); }
+  });
+
+  sb.auth.onAuthStateChange(function(event, session){
+    var wasLoggedIn = !!SESSION;
+    SESSION = session ? {email: session.user.email} : null;
+    if (SESSION && !wasLoggedIn){
+      VIEW = {screen:"roster", id:null, editing:false};
+      loadCharacters().then(render);
+    } else if (!SESSION){
+      CHARACTERS = [];
+      VIEW = {screen:"roster", id:null, editing:false};
+      render();
+    }
+  });
+
+  sb.channel("characters-changes").on("postgres_changes", {event:"*", schema:"public", table:"characters"}, function(){
+    if (SESSION) loadCharacters().then(render);
+  }).subscribe();
+})();
+</script>
+</body>
+</html>
