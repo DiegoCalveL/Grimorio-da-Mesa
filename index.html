@@ -267,10 +267,12 @@
   .history-col textarea{width:100%;min-height:320px;line-height:1.7;font-family:"Source Serif 4",serif;font-size:1rem;}
 
   .banner{
-    display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--gold);
+    display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface-2);border:1px solid var(--gold);
     border-radius:6px;padding:10px 14px;margin-bottom:18px;font-size:.86rem;color:var(--ink-soft);
   }
   .banner.warn{border-color:var(--accent);color:var(--accent);}
+  .banner button{background:none;border:none;color:inherit;font-size:1.1rem;line-height:1;cursor:pointer;padding:0 0 0 10px;opacity:.75;}
+  .banner button:hover{opacity:1;}
 
   .claim-box{
     background:var(--surface-2);border:1px dashed var(--line-strong);border-radius:6px;padding:16px 18px;
@@ -467,8 +469,8 @@
 
   // ---------- navigation ----------
 
-  function goRoster(){ VIEW = {screen:"roster", id:null, editing:false}; draft=null; render(); window.scrollTo(0,0); }
-  function goSheet(id){ VIEW = {screen:"sheet", id:id, editing:false}; draft=null; render(); window.scrollTo(0,0); }
+  function goRoster(){ VIEW = {screen:"roster", id:null, editing:false}; draft=null; banner=null; render(); window.scrollTo(0,0); }
+  function goSheet(id){ VIEW = {screen:"sheet", id:id, editing:false}; draft=null; banner=null; render(); window.scrollTo(0,0); }
 
   function showAddForm(){ VIEW._showAdd = true; render(); var inp = document.getElementById("new-char-name"); if (inp) inp.focus(); }
   function cancelAdd(){ VIEW._showAdd = false; render(); }
@@ -484,6 +486,7 @@
     VIEW._showAdd = false;
     sb.from("characters").insert({id: uniqueId, player_name: playerName, owner_email: SESSION.email, data: blankCharacterData()}).then(function(res){
       if (res.error){ setBanner({type:"error", text:"Não foi possível criar a ficha: " + res.error.message}); render(); return; }
+      banner = null;
       VIEW = {screen:"sheet", id: uniqueId, editing:false};
       refreshAndRender();
     });
@@ -496,6 +499,7 @@
     if (!window.confirm('Remover "' + label + '" (jogador ' + c.playerName + ')? Essa ação não pode ser desfeita.')) return;
     sb.from("characters").delete().eq("id", id).then(function(res){
       if (res.error){ setBanner({type:"error", text:"Não foi possível remover: " + res.error.message}); render(); return; }
+      banner = null;
       VIEW = {screen:"roster", id:null, editing:false};
       refreshAndRender();
     });
@@ -508,6 +512,7 @@
         refreshAndRender();
         return;
       }
+      banner = null;
       refreshAndRender();
     });
   }
@@ -516,10 +521,11 @@
     var c = findChar(id);
     VIEW.editing = true;
     draft = JSON.parse(JSON.stringify(c));
+    banner = null;
     render();
   }
   function cancelEdit(){
-    VIEW.editing = false; draft = null; render();
+    VIEW.editing = false; draft = null; banner = null; render();
   }
   function saveEdit(){
     var payload = {};
@@ -530,6 +536,7 @@
     var playerName = draft.playerName;
     sb.from("characters").update({player_name: playerName, data: payload}).eq("id", savedId).then(function(res){
       if (res.error){ setBanner({type:"error", text:"Não foi possível salvar: " + res.error.message}); render(); return; }
+      banner = null;
       VIEW = {screen:"sheet", id:savedId, editing:false};
       draft = null;
       refreshAndRender();
@@ -547,7 +554,8 @@
     }
     var html = "";
     if (banner){
-      html += '<div class="banner ' + (banner.type==="error"?"warn":"") + '">' + esc(banner.text) + '</div>';
+      html += '<div class="banner ' + (banner.type==="error"?"warn":"") + '"><span>' + esc(banner.text) + '</span>' +
+        '<button type="button" data-dismiss-banner title="Fechar aviso" aria-label="Fechar aviso">&times;</button></div>';
     }
     if (VIEW.screen === "roster"){
       html += renderRoster();
@@ -903,6 +911,9 @@
 
     var logoutBtn = app.querySelector("[data-logout]");
     if (logoutBtn) logoutBtn.addEventListener("click", doLogout);
+
+    var dismissBtn = app.querySelector("[data-dismiss-banner]");
+    if (dismissBtn) dismissBtn.addEventListener("click", function(){ banner = null; render(); });
 
     // bound inputs (draft mode)
     app.querySelectorAll("[data-bind]").forEach(function(el){
